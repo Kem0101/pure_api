@@ -23,12 +23,12 @@ api
 // Área privada
 api.get('/perfil', md_auth, UserController.homeUser);
 
-api.get('/user/:id', md_auth, UserController.getUser);
-api.get('/users/:page?', md_auth, UserController.getUsers);
-api.get('/counters/:id?', md_auth, UserController.getCounters);
-api.put('/update-user/:id', md_auth, UserController.updateUser);
+// api.get('/user/:id', md_auth, UserController.getUser);
+// api.get('/users/:page?', md_auth, UserController.getUsers);
+// api.get('/counters/:id?', md_auth, UserController.getCounters);
+// api.put('/update-user/:id', md_auth, UserController.updateUser);
 
-api.post('/upload-image/:id', md_auth, UserController.uploadImage);
-api.get('/get-image/:imageFile', md_auth, UserController.getImageFile);
+// api.post('/upload-image/:id', md_auth, UserController.uploadImage);
+// api.get('/get-image/:imageFile', md_auth, UserController.getImageFile);
 
 export default api;

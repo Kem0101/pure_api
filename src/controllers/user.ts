@@ -441,7 +441,7 @@ export default {
   // getUser,
   // getUsers,
   // getCounters,
-  updateUser,
-  uploadImage,
-  getImageFile,
+  // updateUser,
+  // uploadImage,
+  // getImageFile,
 };
