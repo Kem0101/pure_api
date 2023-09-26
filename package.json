@@ -4,10 +4,9 @@
   "description": "backend para la red social con el mean stack",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js"
   },
   "author": "Sam Minyety",
   "license": "ISC",
