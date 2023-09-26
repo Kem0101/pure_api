@@ -1,7 +1,7 @@
 'use strict';
 
 import mongoose, { Error } from 'mongoose';
-import message from '../controllers/message';
+// import message from '../controllers/message';
 
 mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);

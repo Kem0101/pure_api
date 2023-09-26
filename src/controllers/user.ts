@@ -8,8 +8,8 @@ import fs from 'fs';
 import path = require('path');
 
 import User from '../models/user';
-import Follow from '../models/follow';
-import Publication from '../models/publication';
+// import Follow from '../models/follow';
+// import Publication from '../models/publication';
 
 import generateJWT from '../helpers/generateJWT';
 import generateId from '../helpers/generateId';
@@ -177,151 +177,151 @@ async function newPassword(req: any, res: any) {
 // METODO PARA EXTRAER LOS DATOS DE UN USUARIO
 // ESTE METODO ESTA PENDIENTE A REVISAR, ACTUALMENTE TRAE EL USUARIO SOLICITADO POR SU ID PERO
 // EL OBJECTO VALUE QUE DEBE TRAER SI SIGUE Y ES SEGUIDO POR EL USUARIO QUE ESTA LOGUEADO, VIENE VACIO
-function getUser(req: any, res: any) {
-  let userId = req.params.id;
+// function getUser(req: any, res: any) {
+//   let userId = req.params.id;
 
-  User.findById(userId, (error: any, user: any) => {
-    if (!user) {
-      const error = new Error('El usuario no existe');
-      return res.status(404).send({ msg: error.message });
-    }
+//   User.findById(userId, (error: any, user: any) => {
+//     if (!user) {
+//       const error = new Error('El usuario no existe');
+//       return res.status(404).send({ msg: error.message });
+//     }
 
-    // Este bloque de codigo siguientes me permite saber si estoy siguiendo a este usuario y si me sigue
-    followThisUser(req.user.sub, userId).then((value) => {
-      user.password = undefined;
-      return res.json({ user, value });
-    });
-  });
-}
+//     // Este bloque de codigo siguientes me permite saber si estoy siguiendo a este usuario y si me sigue
+//     followThisUser(req.user.sub, userId).then((value) => {
+//       user.password = undefined;
+//       return res.json({ user, value });
+//     });
+//   });
+// }
 
-async function followThisUser(identity_user_id: any, user_id: any) {
-  try {
-    let following = await Follow.findOne({
-      user: identity_user_id,
-      followed: user_id,
-    }).then((follow: any) => {
-      console.log(follow);
-      return follow;
-    });
+// async function followThisUser(identity_user_id: any, user_id: any) {
+//   try {
+//     let following = await Follow.findOne({
+//       user: identity_user_id,
+//       followed: user_id,
+//     }).then((follow: any) => {
+//       console.log(follow);
+//       return follow;
+//     });
 
-    let followed = await Follow.findOne({
-      user: user_id,
-      followed: identity_user_id,
-    }).then((follow: any) => {
-      console.log(follow);
-      return follow;
-    });
+//     let followed = await Follow.findOne({
+//       user: user_id,
+//       followed: identity_user_id,
+//     }).then((follow: any) => {
+//       console.log(follow);
+//       return follow;
+//     });
 
-    return {
-      following: following,
-      followed: followed,
-    };
-  } catch (err) {
-    console.log(err);
-  }
-}
+//     return {
+//       following: following,
+//       followed: followed,
+//     };
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
 // // METODO PARA DEVOLVER UN LISTADO DE USUARIOS PAGINADOS
-function getUsers(req: any, res: any) {
-  // Obtener el id del usuario logueado
-  let identity_user_id = req.user;
-  let page = 1;
+// function getUsers(req: any, res: any) {
+//   // Obtener el id del usuario logueado
+//   let identity_user_id = req.user;
+//   let page = 1;
 
-  if (req.params.page) {
-    page = req.params.page;
-  }
+//   if (req.params.page) {
+//     page = req.params.page;
+//   }
 
-  let itemsPerPage = 5;
-  let total: number;
+//   let itemsPerPage = 5;
+//   let total: number;
 
-  User.find().paginate(page, itemsPerPage, (error: any, users: any) => {
-    if (!users) {
-      const error = new Error('No hay usuarios disponibles');
-      return res.json({ msg: error.message });
-    }
+//   User.find().paginate(page, itemsPerPage, (error: any, users: any) => {
+//     if (!users) {
+//       const error = new Error('No hay usuarios disponibles');
+//       return res.json({ msg: error.message });
+//     }
 
-    followUserIds(identity_user_id).then((value) => {
-      return res.json({
-        users,
-        user_following: value.following,
-        user_followed_me: value.followed,
-        total,
-        pages: Math.ceil(total / itemsPerPage),
-      });
-    });
-  });
-}
+//     followUserIds(identity_user_id).then((value) => {
+//       return res.json({
+//         users,
+//         user_following: value.following,
+//         user_followed_me: value.followed,
+//         total,
+//         pages: Math.ceil(total / itemsPerPage),
+//       });
+//     });
+//   });
+// }
 
-async function followUserIds(user_id: any) {
-  let following = await Follow.find({ user: user_id })
-    .select({ _id: 0, __v: 0, user: 0 })
-    .exec()
-    .then((following: any) => {
-      return following;
-    })
-    .catch((err: any) => {
-      return console.log(err);
-    });
+// async function followUserIds(user_id: any) {
+//   let following = await Follow.find({ user: user_id })
+//     .select({ _id: 0, __v: 0, user: 0 })
+//     .exec()
+//     .then((following: any) => {
+//       return following;
+//     })
+//     .catch((err: any) => {
+//       return console.log(err);
+//     });
 
-  let followed = await Follow.find({ followed: user_id })
-    .select({ _id: 0, __v: 0, followed: 0 })
-    .exec()
-    .then((followed: any) => {
-      return followed;
-    })
-    .catch((err: any) => {
-      return console.log(err);
-    });
+//   let followed = await Follow.find({ followed: user_id })
+//     .select({ _id: 0, __v: 0, followed: 0 })
+//     .exec()
+//     .then((followed: any) => {
+//       return followed;
+//     })
+//     .catch((err: any) => {
+//       return console.log(err);
+//     });
 
-  // Procesar following ids
-  let following_clean: any[] = [];
+//   // Procesar following ids
+//   let following_clean: any[] = [];
 
-  following.forEach((follow: any) => {
-    following_clean.push(follow.followed);
-  });
+//   following.forEach((follow: any) => {
+//     following_clean.push(follow.followed);
+//   });
 
-  // Procesar followed ids
-  let followed_clean: any[] = [];
+//   // Procesar followed ids
+//   let followed_clean: any[] = [];
 
-  followed.forEach((follow: any) => {
-    followed_clean.push(follow.user);
-  });
+//   followed.forEach((follow: any) => {
+//     followed_clean.push(follow.user);
+//   });
 
-  return {
-    following: following_clean,
-    followed: followed_clean,
-  };
-}
+//   return {
+//     following: following_clean,
+//     followed: followed_clean,
+//   };
+// }
 
 // // METODO PARA CONTABILIZAR LOS USUARIOS QUE SIGO, LOS QUE ME SIGUEN Y LAS PUBLICACIONES
-function getCounters(req: any, res: any) {
-  let userId = req.user;
-  if (req.params.id) {
-    userId = req.params.id;
-  }
+// function getCounters(req: any, res: any) {
+//   let userId = req.user;
+//   if (req.params.id) {
+//     userId = req.params.id;
+//   }
 
-  getCountFollow(userId).then((value) => {
-    return res.json({ value });
-  });
-}
+//   getCountFollow(userId).then((value) => {
+//     return res.json({ value });
+//   });
+// }
 
-const getCountFollow = async (user_id: any) => {
-  try {
-    // Lo hice de dos formas. "following" con callback de countDocuments y "followed" con una promesa
-    let following = await Follow.countDocuments({ user: user_id }).then(
-      (count: any) => count
-    );
-    let followed = await Follow.countDocuments({ followed: user_id }).then(
-      (count: any) => count
-    );
-    let publication = await Publication.countDocuments({ user: user_id }).then(
-      (count: any) => count
-    );
+// const getCountFollow = async (user_id: any) => {
+//   try {
+//     // Lo hice de dos formas. "following" con callback de countDocuments y "followed" con una promesa
+//     let following = await Follow.countDocuments({ user: user_id }).then(
+//       (count: any) => count
+//     );
+//     let followed = await Follow.countDocuments({ followed: user_id }).then(
+//       (count: any) => count
+//     );
+//     let publication = await Publication.countDocuments({ user: user_id }).then(
+//       (count: any) => count
+//     );
 
-    return { following, followed, publication };
-  } catch (error) {
-    console.log(error);
-  }
-};
+//     return { following, followed, publication };
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
 // // METODO PARA ACTUALIZAR LOS DATOS DE UN USUARIO
 function updateUser(req: any, res: any) {
@@ -438,9 +438,9 @@ export default {
   forgotPassword,
   checkToken,
   newPassword,
-  getUser,
-  getUsers,
-  getCounters,
+  // getUser,
+  // getUsers,
+  // getCounters,
   updateUser,
   uploadImage,
   getImageFile,
