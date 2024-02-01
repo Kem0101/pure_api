@@ -3,10 +3,10 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import conectionDB from './config/database';
 import userRoutes from './routes/user';
-// import publicationRoutes from './routes/publication';
+import publicationRoutes from './routes/publication';
 import bodyParser from 'body-parser';
-// import messageRoutes from './routes/message';
-// import followRoutes from './routes/follow';
+import messageRoutes from './routes/message';
+import followRoutes from './routes/follow';
 
 const app = express();
 dotenv.config(); // dotenv para configurar variables de entornos
@@ -32,9 +32,9 @@ app.use(bodyParser.json());
 // Cargando rutas
 // // Rutas
 app.use('/api', userRoutes);
-// app.use('/api', publicationRoutes);
-// app.use('/api', messageRoutes);
-// app.use('/api', followRoutes);
+app.use('/api', publicationRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', followRoutes);
 
 // Levantando el servidor en el puerto x
 const PORT = process.env.PORT;
