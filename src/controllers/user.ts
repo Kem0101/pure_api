@@ -1,353 +1,364 @@
-'use strict';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-sequences */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+'use strict'
 
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express'
 
-import 'mongoose-pagination';
+import User from '../models/user'
+import Follow from '../models/follow'
+import Publication from '../models/publication'
 
-import User from '../models/user';
-import Follow from '../models/follow';
-import Publication from '../models/publication';
+import generateJWT from '../helpers/generateJWT'
+import generateId from '../helpers/generateId'
+import emailRegister from '../helpers/emailRegister'
+import emailOlvidePassword from '../helpers/emailForgotPassword'
 
-import generateJWT from '../helpers/generateJWT';
-import generateId from '../helpers/generateId';
-import emailRegister from '../helpers/emailRegister';
-import emailOlvidePassword from '../helpers/emailForgotPassword';
+import { IFollow, IUser } from './interfaces'
+import { logError } from '../helpers/loggers'
 
-//--------------------------------------------------------
-
-// METODO PARA REGISTRAR USUARIO
-// esta tipado es el que le vamos a dar a las request y response
+// --------------------------------------------------------
+/**
+ * 
+ * @param req 
+ * @param res 
+ * @returns { IUser }
+ */
 async function saveUser(req: Request, res: Response) {
-  const { username, email, fullname } = req.body;
+  const { email, fullname } = req.body
 
   // Prevenir usuarios duplicados
-  const existUser: string = await User.findOne({ username });
-  const existEmail: string = await User.findOne({ email });
+  const existUser = await User.findOne({ email })
   if (existUser) {
-    const error = new Error('Usuario no disponible');
-    return res.status(400).json({ msg: error.message });
-  }
-  if (existEmail) {
-    const error = new Error('Email no disponible');
-    return res.status(400).json({ msg: error.message });
+    const error = new Error('Email no disponible')
+    return res.status(400).json({ msg: error.message })
   }
 
   try {
     // Guardar nuevo usuario
-    const user = new User(req.body);
-    const userSaved: any = await user.save();
+    const user = new User(req.body) as IUser
+    const userSaved: IUser = await user.save()
 
     // Enviar email de confirmación
-    emailRegister({
+    await emailRegister({
       email,
       fullname,
       token: userSaved.token,
-    });
+    })
 
-    return res.json(userSaved);
-  } catch (error) {
-    console.log(error);
+    return res.json(userSaved)
+  } catch (error: unknown) {
+    logError(error)    
   }
 }
 
 // METODO PARA CONFIRMAR CUENTA DE USUARIO
-async function userConfirm(req: any, res: any) {
-  const { token } = req.params;
+async function userConfirm(req: Request, res: Response) {
+  const { token } = req.params
 
-  const confirm = await User.findOne({ token });
-  if (!confirm) {
-    const error = new Error('Token no valido');
-    return res.status(404).json({ msg: error.message });
+  const confirm = await User.findOne({ token })
+  if (confirm === null) {
+    const error = new Error('Token no valido')
+    return res.status(404).json({ msg: error.message })
   }
-  console.log(confirm);
-
   try {
-    (confirm.token = null), (confirm.confirmed = true);
-    await confirm.save();
+    (confirm.token = null), (confirm.confirmed = true)
+    await confirm.save()
 
-    res.json({ msg: 'Usuario confirmado correctamente' });
+    res.json({ msg: 'Usuario confirmado correctamente' })
   } catch (error) {
-    console.log(error);
+    logError(error)
   }
 }
 
 // // METODO PARA LOGUEAR UN USUARIO
-async function userLogin(req: any, res: any) {
+async function userLogin(req: Request, res: Response) {
   // Destructurar
-  const { email, password } = req.body;
+  const { email, password } = req.body
 
   // Verificar si el usuario existe
-  const existUser = await User.findOne({ email });
-  if (!existUser) {
-    const error = new Error('El usuario no existe');
-    return res.status(404).json({ msg: error.message });
+  const existUser = await User.findOne({ email })
+  if (existUser == null) {
+    const error = new Error('El usuario no existe')
+    return res.status(404).json({ msg: error.message })
   }
   // Comprobar si el usuario esta confirmado
   if (!existUser.confirmed) {
-    const error = new Error('Tu cuenta no ha sido confirmada');
-    return res.status(401).json({ msg: error.message });
+    const error = new Error('Tu cuenta no ha sido confirmada')
+    return res.status(401).json({ msg: error.message })
   }
   // Revisar si el password es correcto
-  if (await existUser.authenticate(password)) {
+  if ((await existUser.authenticate(password)) === true) {
     // Autenticar el usuario
-    res.json({
+    return res.json({
       _id: existUser._id,
       fullname: existUser.fullname,
       email: existUser.email,
-      token: generateJWT(existUser.id),
-    });
+      token: generateJWT(existUser._id),
+    })
   } else {
-    const error = new Error('El password es incorrecto');
-    return res.status(400).json({ msg: error.message });
+    const error = new Error('El password es incorrecto')
+    return res.status(400).json({ msg: error.message })
   }
 
   // return res.json({ msg: 'Usuario ready' });
 }
 
 // PERFIL DE USUARIO ESTE METODO ES LA PAGINA PRINCIPAL LUEGO QUE EL USUARIO SE HA AUTENTICADO
-function homeUser(req: any, res: any) {
-  const { user } = req;
+function homeUser(req: Request, res: Response) {
+  const { user }: any = req
 
-  res.json(user);
+  return res.json(user)
 }
 
 // METODO OLVIDE CONTRASEÑA
-async function forgotPassword(req: any, res: any) {
-  const { email } = req.body;
+async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body
 
-  const existUser = await User.findOne({ email });
-  if (!existUser) {
-    const error = new Error('El usuario no existe');
-    return res.json({ msg: error.message });
+  const existUser = await User.findOne({ email })
+  if (existUser == null) {
+    const error = new Error('El usuario no existe')
+    return res.json({ msg: error.message })
   }
 
   try {
-    existUser.token = generateId();
-    await existUser.save();
+    existUser.token = generateId()
+    await existUser.save()
 
     // Enviar email con instrucciones
-    emailOlvidePassword({
+    await emailOlvidePassword({
       email,
-      fullname: existUser.name,
+      fullname: existUser.fullname,
       token: existUser.token,
-    });
+    })
 
-    res.json({
+    return res.json({
       msg: 'Hemos enviado un email con los pasos para cambiar la contraseña',
-    });
+    })
   } catch (error) {
-    console.log(error);
+    logError(error)
   }
 }
 // METODO COMPROBAR PASSWORD
-async function checkToken(req: any, res: any) {
-  const { token } = req.params;
+async function checkToken(req: Request, res: Response) {
+  const { token } = req.params
 
-  const validToken = await User.findOne({ token });
-  if (validToken) {
-    res.json({ msg: 'Token válido y el usuario existe' });
+  const validToken = await User.findOne({ token })
+  if (validToken !== null) {
+    return res.json({ msg: 'Token válido y el usuario existe' })
   } else {
-    const error = new Error('Token no válido');
-    return res.json({ msg: error.message });
+    const error = new Error('Token no válido')
+    return res.json({ msg: error.message })
   }
 }
 // METODO ASIGNAR EL NUEVO PASSWORD
-async function newPassword(req: any, res: any) {
-  const { token } = req.params;
-  const { password } = req.body;
+async function newPassword(req: Request, res: Response) {
+  const { token } = req.params
+  const { password } = req.body
 
-  const user = await User.findOne({ token });
-  if (!user) {
-    const error = new Error('Hubo un error');
-    return res.json({ msg: error.message });
+  const user = await User.findOne({ token })
+  if (user == null) {
+    const error = new Error('Hubo un error')
+    return res.json({ msg: error.message })
   }
   try {
-    user.token = null;
-    user.password = password;
-    await user.save();
-    res.json({ msg: 'Password modificado correctamente' });
+    user.token = null
+    user.password = password
+    await user.save()
+    return res.json({ msg: 'Password modificado correctamente' })
   } catch (error) {
-    console.log(error);
+    logError(error)
   }
 }
 
 // METODO PARA EXTRAER LOS DATOS DE UN USUARIO
 // ESTE METODO ESTA PENDIENTE A REVISAR, ACTUALMENTE TRAE EL USUARIO SOLICITADO POR SU ID PERO
 // EL OBJECTO VALUE QUE DEBE TRAER SI SIGUE Y ES SEGUIDO POR EL USUARIO QUE ESTA LOGUEADO, VIENE VACIO
-function getUser(req: any, res: any) {
-  let userId = req.params.id;
+async function getUser(req: Request | any, res: Response) {
+  const userId = req.params.id
 
-  User.findById(userId, (error: any, user: any) => {
-    if (!user) {
-      const error = new Error('El usuario no existe');
-      return res.status(404).send({ msg: error.message });
+  await User.findById(userId, async (user: IUser) => {
+    if (user == null) {
+      const error = new Error('El usuario no existe')
+      return res.status(404).send({ msg: error.message })
     }
 
     // Este bloque de codigo siguientes me permite saber si estoy siguiendo a este usuario y si me sigue
-    followThisUser(req.user.sub, userId).then((value) => {
-      user.password = undefined;
-      return res.json({ user, value });
-    });
-  });
+    await followThisUser(req.user.sub, userId).then((value) => {
+      user.password == undefined
+      return res.json({ user, value })
+    })
+  })
 }
 
-async function followThisUser(identity_user_id: any, user_id: any) {
+async function followThisUser(identityUserId: string, userId: string) {
   try {
-    let following = await Follow.findOne({
-      user: identity_user_id,
-      followed: user_id,
-    }).then((follow: any) => {
-      console.log(follow);
-      return follow;
-    });
+    const following = await Follow.findOne({
+      user: identityUserId,
+      followed: userId,
+    }).then((follow: object) => {
+      console.log(follow)
+      return follow
+    })
 
-    let followed = await Follow.findOne({
-      user: user_id,
-      followed: identity_user_id,
-    }).then((follow: any) => {
-      console.log(follow);
-      return follow;
-    });
+    const followed = await Follow.findOne({
+      user: userId,
+      followed: identityUserId,
+    }).then((follow: IFollow) => {
+      console.log(follow)
+      return follow
+    })
 
     return {
-      following: following,
-      followed: followed,
-    };
-  } catch (err) {
-    console.log(err);
+      following,
+      followed,
+    }
+  } catch (error) {
+    logError(error)
   }
 }
-// // METODO PARA DEVOLVER UN LISTADO DE USUARIOS PAGINADOS
-function getUsers(req: any, res: any) {
-  // Obtener el id del usuario logueado
-  let identity_user_id = req.user;
-  let page = 1;
 
-  if (req.params.page) {
-    page = req.params.page;
-  }
+// METODO PARA DEVOLVER UN LISTADO DE USUARIOS PAGINADOS(Trabajar la paginación)
+async function getUsers(req: Request | any, res: Response) {
+ 
+  try {
+    const identityId = req.user
+    let page = 1
 
-  let itemsPerPage = 5;
-  let total: number;
-
-  User.find().paginate(page, itemsPerPage, (error: any, users: any) => {
-    if (!users) {
-      const error = new Error('No hay usuarios disponibles');
-      return res.json({ msg: error.message });
+    if (req.params.page) {
+      page = req.params.page
     }
 
-    followUserIds(identity_user_id).then((value) => {
+    const itemsPerPage = 5
+
+    const options = {
+      page: page,
+      limit: itemsPerPage
+    }
+   
+    const users = await User.paginate({}, options)
+    if(!users){
+      const error = new Error('No hay usuarios disponibles')
+      return res.send(404).json({ msg: error.message})
+    }
+
+    followUserIds(identityId).then((value) => {
       return res.json({
-        users,
+        users: users.docs,
         user_following: value.following,
         user_followed_me: value.followed,
-        total,
-        pages: Math.ceil(total / itemsPerPage),
-      });
-    });
-  });
+        total: users.totalDocs,
+        pages: users.totalPages
+      })
+    })
+  }    
+  catch (error: unknown) {
+    logError(error)
+  }
 }
 
-async function followUserIds(user_id: any) {
-  let following = await Follow.find({ user: user_id })
+async function followUserIds(userId: string) {
+  const following = await Follow.find({ user: userId })
     .select({ _id: 0, __v: 0, user: 0 })
     .exec()
     .then((following: any) => {
-      return following;
+      return following
     })
-    .catch((err: any) => {
-      return console.log(err);
-    });
+    .catch((error: unknown) => {
+      logError(error)
+    })
 
-  let followed = await Follow.find({ followed: user_id })
+  const followed = await Follow.find({ followed: userId })
     .select({ _id: 0, __v: 0, followed: 0 })
     .exec()
     .then((followed: any) => {
-      return followed;
+      return followed
     })
-    .catch((err: any) => {
-      return console.log(err);
-    });
+    .catch((error: unknown) => {
+      console.log(error)
+    })
 
   // Procesar following ids
-  let following_clean: any[] = [];
+  const following_clean: any[] = []
 
   following.forEach((follow: any) => {
-    following_clean.push(follow.followed);
-  });
+    following_clean.push(follow.followed)
+  })
 
   // Procesar followed ids
-  let followed_clean: any[] = [];
+  const followed_clean: any[] = []
 
   followed.forEach((follow: any) => {
-    followed_clean.push(follow.user);
-  });
+    followed_clean.push(follow.user)
+  })
 
   return {
     following: following_clean,
     followed: followed_clean,
-  };
+  }
 }
 
 // // METODO PARA CONTABILIZAR LOS USUARIOS QUE SIGO, LOS QUE ME SIGUEN Y LAS PUBLICACIONES
-function getCounters(req: any, res: any) {
-  let userId = req.user;
+function getCounters(req: Request | any, res: Request | any) {
+  let userId = req.user
   if (req.params.id) {
-    userId = req.params.id;
+    userId = req.params.id
   }
 
   getCountFollow(userId).then((value) => {
-    return res.json({ value });
-  });
+    return res.json({ value })
+  })
 }
 
-const getCountFollow = async (user_id: any) => {
+const getCountFollow = async (userId: string) => {
   try {
     // Lo hice de dos formas. "following" con callback de countDocuments y "followed" con una promesa
-    let following = await Follow.countDocuments({ user: user_id }).then(
-      (count: any) => count
-    );
-    let followed = await Follow.countDocuments({ followed: user_id }).then(
-      (count: any) => count
-    );
-    let publication = await Publication.countDocuments({ user: user_id }).then(
-      (count: any) => count
-    );
+    const following = await Follow.countDocuments({ user: userId }).then(
+      (count: any) => count,
+    )
+    const followed = await Follow.countDocuments({ followed: userId }).then(
+      (count: any) => count,
+    )
+    const publication = await Publication.countDocuments({
+      user: userId,
+    }).then((count: any) => count)
 
-    return { following, followed, publication };
+    return { following, followed, publication }
   } catch (error) {
-    console.log(error);
+    logError(error)
   }
-};
+}
 
 // // METODO PARA ACTUALIZAR LOS DATOS DE UN USUARIO
 function updateUser(req: any, res: any) {
   // Capturar el id que viene por la url, del usuario que esta haciendo la petición
-  let userId = req.params.id;
+  const userId = req.params.id
   // Capturar los datos que viene en el cuerpo de la petición, que son los que van para actualizar
-  let update = req.bolet;
+  const update = req.bolet
 
   //  Borrar el password que viene en la petición del usuario
-  delete update.password;
+  delete update.password
   // Validar que el id del usuario que viene en la petición sea el mismo del usuario que hace la petición
   // solo el propio usuario puede actualizar sus datos
-  if (userId != req.user) {
-    const error = new Error('No tienes permiso para actualizar este usuario');
+  if (userId !== req.user) {
+    const error = new Error('No tienes permiso para actualizar este usuario')
     return res.json({
       msg: error.message,
-    });
+    })
   }
 
-  const userUpdated = User.findByIdAndUpdate(userId, update, { new: true });
+  const userUpdated = User.findByIdAndUpdate(userId, update, { new: true })
   if (!userUpdated) {
-    const error = new Error('No se ha podido actualizar el usuario');
-    return res.json({ msg: error.message });
+    const error = new Error('No se ha podido actualizar el usuario')
+    return res.json({ msg: error.message })
   }
 
   try {
-    return res.json({ user: userUpdated });
+    return res.json({ user: userUpdated })
   } catch (error) {
-    console.log(error);
+    logError(error)
   }
 }
 
@@ -363,4 +374,4 @@ export default {
   getUsers,
   getCounters,
   updateUser,
-};
+}

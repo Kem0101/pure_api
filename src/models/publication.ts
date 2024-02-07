@@ -1,6 +1,6 @@
-'use strict';
+'use strict'
 
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
 const PublicationSchema = new mongoose.Schema({
   text: {
@@ -15,7 +15,7 @@ const PublicationSchema = new mongoose.Schema({
     default: Date.now(),
   },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-});
+})
 
-const Publication = mongoose.model('Publication', PublicationSchema);
-export default Publication;
+const Publication = mongoose.model('Publication', PublicationSchema)
+export default Publication

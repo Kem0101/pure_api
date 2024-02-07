@@ -1,6 +1,6 @@
-'use strict';
+'use strict'
 
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
 const MessageSchema = new mongoose.Schema({
   text: {
@@ -12,7 +12,7 @@ const MessageSchema = new mongoose.Schema({
     default: false,
   },
   created_at: {
-    type: String,
+    type: Number,
   },
   emitter: {
     type: mongoose.Types.ObjectId,
@@ -23,7 +23,7 @@ const MessageSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-});
+})
 
-const Message = mongoose.model('Message', MessageSchema);
-export default Message;
+const Message = mongoose.model('Message', MessageSchema)
+export default Message

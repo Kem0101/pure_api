@@ -1,8 +1,12 @@
-'use strict';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use strict'
 
-import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
-import generateId from '../helpers/generateId';
+import mongoose from 'mongoose'
+import bcrypt from 'bcrypt'
+import generateId from '../helpers/generateId'
+import { IUser } from 'src/controllers/interfaces'
+import paginate from 'mongoose-paginate-v2'
+
 
 const UserSchema = new mongoose.Schema({
   fullname: {
@@ -47,7 +51,7 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-});
+})
 
 //  Este bloque de codigo es una especie de middleware que hashea el password antes de almacenar
 //  el objeto user,
@@ -55,18 +59,20 @@ const UserSchema = new mongoose.Schema({
 //  start
 UserSchema.pre<any>('save', async function (next) {
   if (!this.isModified('password')) {
-    next();
+    next()
   }
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
+  const salt = await bcrypt.genSalt(10)
+  this.password = await bcrypt.hash(this.password, salt)
+})
 // end
 
 // Comprobar el password del usuario
-UserSchema.methods.authenticate = async function (passwordForm) {
-  return await bcrypt.compareSync(passwordForm, (this as any).password);
-};
+UserSchema.methods.authenticate = function (passwordForm: string): boolean {
+  return bcrypt.compareSync(passwordForm, (this as IUser).password) 
+}
 
-const User = mongoose.model('User', UserSchema);
-export default User;
+UserSchema.plugin(paginate)
+
+const User = mongoose.model<IUser, mongoose.PaginateModel<IUser>>('User', UserSchema)
+export default User

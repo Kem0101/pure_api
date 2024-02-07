@@ -2,6 +2,6 @@
 /* eslint-disable @typescript-eslint/semi */
 describe('My first test suite', () => {
   it('My first test case', () => {
-    expect(true).toBe(true);
-  });
-});
+    expect(true).toBe(true)
+  })
+})
