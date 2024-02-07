@@ -1,7 +1,7 @@
-// CONFIGURANDO EL ENVIO DE EMAIL DE CONFIRMACION
+// CONFIGURING THE SENDING OF CONFIRMATION EMAILS
 
-import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import nodemailer from 'nodemailer'
+import SMTPTransport from 'nodemailer/lib/smtp-transport'
 
 const emailRegister = async (datos: any) => {
   const transporter = nodemailer.createTransport({
@@ -11,11 +11,10 @@ const emailRegister = async (datos: any) => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
-  } as SMTPTransport.Options);
+  } as SMTPTransport.Options)
 
-  // Destructurar los datos que recibe la función
-  const { email, fullname, token } = datos;
-  // Enviar el email
+  const { email, fullname, token } = datos
+  // Send Email
   const info = await transporter.sendMail({
     from: 'CristoGrand - Una red social pura',
     to: email,
@@ -27,8 +26,8 @@ const emailRegister = async (datos: any) => {
 
            <p>Si tu no creaste esta cuenta, puedes ignorar este mensaje!</p>
     `,
-  });
-  console.log('Mensaje enviado: %s', info.messageId);
-};
+  })
+  console.log('Mensaje enviado: %s', info.messageId)
+}
 
-export default emailRegister;
+export default emailRegister

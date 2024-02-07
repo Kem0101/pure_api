@@ -11,7 +11,7 @@ import Publication from '../models/publication'
 import Follow from '../models/follow'
 import { IFollow, IPublication, IUser } from './interfaces'
 
-// METODO PARA GUARDAR UNA PUBLICACION
+
 async function savePublication(req: Request | any, res: Response) {
   const { text, file } = req.body
 
@@ -30,8 +30,8 @@ async function savePublication(req: Request | any, res: Response) {
   }
 }
 
-// METODO PUBLICACIONES TIMELINE (sacar todas las publicaciones)
-// REVISAR ESTE METODO
+// TIMELINE PUBLICATIONS METHOD (remove all publications)
+// REVIEW THIS METHOD
 function getPublications(req: Request | any, res: Response) {
   let page = 1
   if (req.params.page) {
@@ -73,16 +73,16 @@ function getPublications(req: Request | any, res: Response) {
               return res.status(204).json({ msg: error.message })
             }
 
-            // Eliminar la propiedad user.password de cada publicación
+           // Remove the user.password property from each publication
             publications = publications.map((publication) => {
               const newPublication = publication.toObject()
-               // Extrae el objeto 'user' y elimina las propiedades no deseadas
+               // Extracts the 'user' object and removes unwanted properties
             const { ...userResponse } = newPublication.user
             
-            // Reemplaza 'user' con el nuevo objeto 'user' sin las propiedades eliminadas
+            // Replace 'user' with the new object 'user' without the deleted properties
             newPublication.user = userResponse
 
-            // Devuelve el objeto modificado, que debe coincidir con la estructura de IPublication
+            // Returns the modified object, which must match the structure of IPublication
             return newPublication as IPublication
             })
 
@@ -107,7 +107,7 @@ function getPublication(req: Request, res: Response) {
   return res.json({ publication })
 }
 
-// METODO PARA ELIMINAR UNA PUBLICACION
+
 function deletePublication(req: Request | any, res: Response) {
   const publicationId = req.params.id
 

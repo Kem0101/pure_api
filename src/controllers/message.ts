@@ -8,7 +8,7 @@ import { type Request, type Response } from 'express'
 import Message from '../models/message'
 import { IMessage } from './interfaces'
 
-// METODO PARA GUARDAR NUEVOS MENSAJES
+// METHOD TO SAVE NEW MESSAGES
 function saveMessage(req: Request | any, res: Response) {
   const data = req.body
 
@@ -35,7 +35,7 @@ function saveMessage(req: Request | any, res: Response) {
   }
 }
 
-// METODO PARA VER(listar) LOS MENSAJES RECIBIDOS
+// METHOD TO VIEW(list) MESSAGES RECEIVED
 function getReceiveMessages(req: Request | any, res: Response) {
   const userId = req.user
 
@@ -47,7 +47,7 @@ function getReceiveMessages(req: Request | any, res: Response) {
   const itemPerPage = 5
 
   const messageQuery = Message.find({ receiver: userId })
-    // En pupulate me permite pasar un segundo parametro especificando cuales campos quiero devolver en la vista
+   // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
     messageQuery
     .populate('emitter', '_id fullname image')
     .paginate(
@@ -73,7 +73,7 @@ function getReceiveMessages(req: Request | any, res: Response) {
     )
 }
 
-// METODO PARA VER(listar) LOS MENSAJES QUE HE ENVIADO
+// METHOD TO VIEW(list) THE MESSAGES I HAVE SENT
 function getEmmittedMessages(req: Request | any, res: Response) {
   const userId = req.user
 
@@ -85,7 +85,7 @@ function getEmmittedMessages(req: Request | any, res: Response) {
   const itemPerPage = 5
 
   Message.find({ emitter: userId })
-    // En pupulate me permite pasar un segundo parametro especificando cuales campos quiero devolver en la vista
+  // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
     .populate('reveiver emitter', '_id name surname nick image')
     .paginate(
       page,
@@ -110,7 +110,7 @@ function getEmmittedMessages(req: Request | any, res: Response) {
     )
 }
 
-// METODO PARA CONTABILIZAR LOS MENSAJES NO LEIDOS
+// METHOD TO COUNT UNREAD MESSAGES
 function getUnviewedMessages(req: Request | any, res: Response) {
   const userId = req.user
 

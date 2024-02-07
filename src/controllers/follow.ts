@@ -6,14 +6,12 @@ import  { type Response, type Request } from 'express'
 import Follow from '../models/follow'
 import { IFollow } from './interfaces'
 
-// METODO PARA GUARDAR EL SEGUIMIENTO A UN USUARIO
+// METHOD TO SAVE THE TRACKING TO A USER
 async function saveFollow(req: Request | any, res: Response) {
-  // Capturar los datos(parametros) que vienen en el cuerpo de la petición
   const data = req.body
 
-  // Crear el objeto del modelo(instancia)
   const follow = new Follow() as IFollow
-  // Validar que el usuario que hace la petición de seguir es el mismo que esta logueado
+  
   follow.user = req.user
   follow.followed = data.followed
 
@@ -30,7 +28,7 @@ async function saveFollow(req: Request | any, res: Response) {
   }
 }
 
-// METODO PARA DEJAR DE SEGUIR A UN USUARIO
+// METHOD TO STOP FOLLOWING A USER
 function deleteFollow(req: Request | any, res: Response) {
   // Capturar el id del usuario logueado
   const userId = req.user
@@ -45,12 +43,11 @@ function deleteFollow(req: Request | any, res: Response) {
   }
 }
 
-// METODO PARA LISTAR LOS USUARIOS QUE SIGO
+// METHOD TO LIST THE USERS I FOLLOW
 function getFollowingUser(req: Request | any, res: Response) {
-  // Capturar el id del usuario logueado
   let userId = req.user
-  // Validar si por la URL me pasan algun id entonces usarlo como referencia sustituyento el valor de
-  // userId por el id que llego como parametro
+ // Validate if the URL gives me any id then use it as a reference by replacing the value of
+  // userId by the id that I received as a parameter
   if (req.params.id && req.params.page) {
     userId = req.params.id
   }
@@ -87,12 +84,11 @@ function getFollowingUser(req: Request | any, res: Response) {
     )
 }
 
-// METODO PARA LISTAR LOS USUARIOS QUE ME SIGUEN
+// METHOD TO LIST THE USERS THAT FOLLOW ME
 function getFollowedUsers(req: Request | any, res: Response) {
-  // Recoger los parametros de usuario identificado
   let userId = req.user
-  // Validar si por la URL me pasan algun id entonces usarlo como referencia sustituyento el valor de
-  // userId por el id que llego como parametro
+  // Validate if the URL gives me any id then use it as a reference by replacing the value of
+  // userId by the id that I received as a parameter
   if (req.params.id && req.params.page) {
     userId = req.params.id
   }
@@ -129,7 +125,7 @@ function getFollowedUsers(req: Request | any, res: Response) {
     )
 }
 
-// METODO PARA DEVOLVER LISTADO DE USUARIOS SIN PAGINACION
+// METHOD TO RETURN LIST OF USERS WITHOUT PAGINATION
 function getMyFollows(req: Request | any, res: Response) {
   const userId = req.user
 

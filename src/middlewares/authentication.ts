@@ -1,7 +1,7 @@
 'use strict'
 
-// Este middleware verifica si el token de la cabecera es valido y no ha espirado antes de
-// dar acceso al usuario que hace la petición de login.
+// This middleware checks if the header token is valid and has not expired before giving access to the user making the login request.
+// giving access to the user making the login request.
 
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import User from '../models/user'

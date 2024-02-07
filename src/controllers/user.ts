@@ -29,7 +29,7 @@ import { logError } from '../helpers/loggers'
 async function saveUser(req: Request, res: Response) {
   const { email, fullname } = req.body
 
-  // Prevenir usuarios duplicados
+  // Prevent duplicate user
   const existUser = await User.findOne({ email })
   if (existUser) {
     const error = new Error('Email no disponible')
@@ -37,11 +37,10 @@ async function saveUser(req: Request, res: Response) {
   }
 
   try {
-    // Guardar nuevo usuario
     const user = new User(req.body) as IUser
     const userSaved: IUser = await user.save()
 
-    // Enviar email de confirmación
+    // Send email confirmation
     await emailRegister({
       email,
       fullname,
@@ -54,7 +53,7 @@ async function saveUser(req: Request, res: Response) {
   }
 }
 
-// METODO PARA CONFIRMAR CUENTA DE USUARIO
+
 async function userConfirm(req: Request, res: Response) {
   const { token } = req.params
 
@@ -75,23 +74,21 @@ async function userConfirm(req: Request, res: Response) {
 
 // // METODO PARA LOGUEAR UN USUARIO
 async function userLogin(req: Request, res: Response) {
-  // Destructurar
   const { email, password } = req.body
 
-  // Verificar si el usuario existe
   const existUser = await User.findOne({ email })
   if (existUser == null) {
     const error = new Error('El usuario no existe')
     return res.status(404).json({ msg: error.message })
   }
-  // Comprobar si el usuario esta confirmado
+  // Check if the user has confirmed his account
   if (!existUser.confirmed) {
     const error = new Error('Tu cuenta no ha sido confirmada')
     return res.status(401).json({ msg: error.message })
   }
-  // Revisar si el password es correcto
+  // Check if password is correct
   if ((await existUser.authenticate(password)) === true) {
-    // Autenticar el usuario
+    // Authenticate user
     return res.json({
       _id: existUser._id,
       fullname: existUser.fullname,
@@ -102,18 +99,16 @@ async function userLogin(req: Request, res: Response) {
     const error = new Error('El password es incorrecto')
     return res.status(400).json({ msg: error.message })
   }
-
-  // return res.json({ msg: 'Usuario ready' });
 }
 
-// PERFIL DE USUARIO ESTE METODO ES LA PAGINA PRINCIPAL LUEGO QUE EL USUARIO SE HA AUTENTICADO
+// User Profile, this method takes the user to the home page after authentication 
 function homeUser(req: Request, res: Response) {
   const { user }: any = req
 
   return res.json(user)
 }
 
-// METODO OLVIDE CONTRASEÑA
+
 async function forgotPassword(req: Request, res: Response) {
   const { email } = req.body
 
@@ -127,7 +122,7 @@ async function forgotPassword(req: Request, res: Response) {
     existUser.token = generateId()
     await existUser.save()
 
-    // Enviar email con instrucciones
+    // Send email with instructions
     await emailOlvidePassword({
       email,
       fullname: existUser.fullname,
@@ -141,7 +136,8 @@ async function forgotPassword(req: Request, res: Response) {
     logError(error)
   }
 }
-// METODO COMPROBAR PASSWORD
+ 
+// Method to check password
 async function checkToken(req: Request, res: Response) {
   const { token } = req.params
 
@@ -153,7 +149,7 @@ async function checkToken(req: Request, res: Response) {
     return res.json({ msg: error.message })
   }
 }
-// METODO ASIGNAR EL NUEVO PASSWORD
+// Method to assign a new password
 async function newPassword(req: Request, res: Response) {
   const { token } = req.params
   const { password } = req.body
@@ -173,9 +169,9 @@ async function newPassword(req: Request, res: Response) {
   }
 }
 
-// METODO PARA EXTRAER LOS DATOS DE UN USUARIO
-// ESTE METODO ESTA PENDIENTE A REVISAR, ACTUALMENTE TRAE EL USUARIO SOLICITADO POR SU ID PERO
-// EL OBJECTO VALUE QUE DEBE TRAER SI SIGUE Y ES SEGUIDO POR EL USUARIO QUE ESTA LOGUEADO, VIENE VACIO
+// METHOD TO EXTRACT USER DATA
+// THIS METHOD IS PENDING TO BE REVIEWED, IT CURRENTLY FETCHES THE USER REQUESTED BY ITS ID BUT
+// THE VALUE OBJECT THAT IT SHOULD BRING IF IT FOLLOWS AND IS FOLLOWED BY THE USER THAT IS LOGGED IN, IS EMPTY.
 async function getUser(req: Request | any, res: Response) {
   const userId = req.params.id
 
@@ -185,7 +181,7 @@ async function getUser(req: Request | any, res: Response) {
       return res.status(404).send({ msg: error.message })
     }
 
-    // Este bloque de codigo siguientes me permite saber si estoy siguiendo a este usuario y si me sigue
+    // This next code block lets me know if I am following this user and if he/she is following me
     await followThisUser(req.user.sub, userId).then((value) => {
       user.password == undefined
       return res.json({ user, value })
@@ -220,7 +216,7 @@ async function followThisUser(identityUserId: string, userId: string) {
   }
 }
 
-// METODO PARA DEVOLVER UN LISTADO DE USUARIOS PAGINADOS(Trabajar la paginación)
+// METHOD FOR RETURNING A LIST OF PAGINATED USERS (Check the pagination)
 async function getUsers(req: Request | any, res: Response) {
  
   try {
@@ -314,7 +310,7 @@ function getCounters(req: Request | any, res: Request | any) {
 
 const getCountFollow = async (userId: string) => {
   try {
-    // Lo hice de dos formas. "following" con callback de countDocuments y "followed" con una promesa
+    // I did it in two ways. "following" with callback of countDocuments and "followed" with a promise
     const following = await Follow.countDocuments({ user: userId }).then(
       (count: any) => count,
     )
@@ -333,15 +329,12 @@ const getCountFollow = async (userId: string) => {
 
 // // METODO PARA ACTUALIZAR LOS DATOS DE UN USUARIO
 function updateUser(req: any, res: any) {
-  // Capturar el id que viene por la url, del usuario que esta haciendo la petición
   const userId = req.params.id
-  // Capturar los datos que viene en el cuerpo de la petición, que son los que van para actualizar
   const update = req.bolet
 
-  //  Borrar el password que viene en la petición del usuario
+// Delete the password that comes in the user request
   delete update.password
-  // Validar que el id del usuario que viene en la petición sea el mismo del usuario que hace la petición
-  // solo el propio usuario puede actualizar sus datos
+  
   if (userId !== req.user) {
     const error = new Error('No tienes permiso para actualizar este usuario')
     return res.json({
