@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-sequences */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
@@ -136,7 +137,8 @@ async function forgotPassword(req: Request, res: Response) {
     logError(error)
   }
 }
- 
+
+
 // Method to check password
 async function checkToken(req: Request, res: Response) {
   const { token } = req.params
@@ -149,6 +151,8 @@ async function checkToken(req: Request, res: Response) {
     return res.json({ msg: error.message })
   }
 }
+
+
 // Method to assign a new password
 async function newPassword(req: Request, res: Response) {
   const { token } = req.params
@@ -169,26 +173,131 @@ async function newPassword(req: Request, res: Response) {
   }
 }
 
+
 // METHOD TO EXTRACT USER DATA
 // THIS METHOD IS PENDING TO BE REVIEWED, IT CURRENTLY FETCHES THE USER REQUESTED BY ITS ID BUT
 // THE VALUE OBJECT THAT IT SHOULD BRING IF IT FOLLOWS AND IS FOLLOWED BY THE USER THAT IS LOGGED IN, IS EMPTY.
 async function getUser(req: Request | any, res: Response) {
   const userId = req.params.id
 
-  await User.findById(userId, async (user: IUser) => {
-    if (user == null) {
+  const user = await User.findById(userId)
+    if (!user) {
       const error = new Error('El usuario no existe')
       return res.status(404).send({ msg: error.message })
     }
 
-    // This next code block lets me know if I am following this user and if he/she is following me
-    await followThisUser(req.user.sub, userId).then((value) => {
+    const { password, token, role, confirmed, image, __v, ...userResponse } = user.toObject()
+
+    // This next code block let me know if I am following this user and if he/she is following me
+    await followThisUser(req.user._id, userId).then((value) => {
       user.password == undefined
-      return res.json({ user, value })
+      return res.json({ userResponse, value })
     })
+  
+}
+
+
+// METHOD FOR RETURNING A LIST OF PAGINATED USERS (Check the pagination)
+async function getUsers(req: Request | any, res: Response) {
+ 
+  try {
+    const identityId = req.user
+    let page = 1
+
+    if (req.params.page) {
+      page = req.params.page
+    }
+
+    const itemsPerPage = 5
+
+    const options = {
+      page: page,
+      limit: itemsPerPage
+    }
+   
+    const users = await User.paginate({}, options)
+    if(!users || !users.docs){
+      const error = new Error('No hay usuarios disponibles')
+      return res.send(404).json({ msg: error.message})
+    }
+
+    const userResponse = users.docs.map((user) => {
+      const usersSinitized = user.toObject()
+      delete usersSinitized.password
+      delete usersSinitized.role
+      delete usersSinitized.image
+      delete usersSinitized.__v
+      delete usersSinitized.token
+      delete usersSinitized.confirmed
+      return usersSinitized
+    }) 
+
+    followUserIds(identityId).then((value) => {
+      return res.json({
+        users: userResponse,
+        user_following: value.following,
+        user_followed_me: value.followed,
+        total: users.totalDocs,
+        pages: users.totalPages
+      })
+    })
+  }    
+  catch (error: unknown) {
+    logError(error)
+  }
+}
+
+
+// METHOD TO COUNT THE USERS I FOLLOW, THOSE WHO FOLLOW ME AND PUBLICATIONS
+function getCounters(req: Request | any, res: Request | any) {
+  let userId = req.user
+  if (req.params.id) {
+    userId = req.params.id
+  }
+
+  getCountFollow(userId).then((value) => {
+    return res.json({ value })
   })
 }
 
+// METHOD TO UPDATE A USER'S DATA
+async function updateUser(req: Request | any, res: Response) {
+  
+  const userId: string = req.params.id
+  const userIdentity = req.user._id
+  const update = req.body
+
+// Delete the password that comes in the user request
+  delete update.password
+  
+  if (userIdentity.toString() !== userId) {
+    const error = new Error('No tienes permiso para actualizar este usuario')
+    return res.json({
+      msg: error.message,
+    })
+  }
+
+  try {
+
+    const userUpdated = await User.findByIdAndUpdate(userId, update, { new: true })
+    if (!userUpdated) {
+      const error = new Error('No se ha podido actualizar el usuario')
+      return res.json({ msg: error.message })
+    }
+
+    const { password, token, role, confirmed, image, __v, ...newUser } = userUpdated.toObject()
+    
+
+    return res.json({ user: newUser })
+
+  } catch (error) {
+    logError(error)
+  }
+}
+
+
+
+// Internal Controller Functions
 async function followThisUser(identityUserId: string, userId: string) {
   try {
     const following = await Follow.findOne({
@@ -212,45 +321,6 @@ async function followThisUser(identityUserId: string, userId: string) {
       followed,
     }
   } catch (error) {
-    logError(error)
-  }
-}
-
-// METHOD FOR RETURNING A LIST OF PAGINATED USERS (Check the pagination)
-async function getUsers(req: Request | any, res: Response) {
- 
-  try {
-    const identityId = req.user
-    let page = 1
-
-    if (req.params.page) {
-      page = req.params.page
-    }
-
-    const itemsPerPage = 5
-
-    const options = {
-      page: page,
-      limit: itemsPerPage
-    }
-   
-    const users = await User.paginate({}, options)
-    if(!users){
-      const error = new Error('No hay usuarios disponibles')
-      return res.send(404).json({ msg: error.message})
-    }
-
-    followUserIds(identityId).then((value) => {
-      return res.json({
-        users: users.docs,
-        user_following: value.following,
-        user_followed_me: value.followed,
-        total: users.totalDocs,
-        pages: users.totalPages
-      })
-    })
-  }    
-  catch (error: unknown) {
     logError(error)
   }
 }
@@ -296,18 +366,6 @@ async function followUserIds(userId: string) {
   }
 }
 
-// // METODO PARA CONTABILIZAR LOS USUARIOS QUE SIGO, LOS QUE ME SIGUEN Y LAS PUBLICACIONES
-function getCounters(req: Request | any, res: Request | any) {
-  let userId = req.user
-  if (req.params.id) {
-    userId = req.params.id
-  }
-
-  getCountFollow(userId).then((value) => {
-    return res.json({ value })
-  })
-}
-
 const getCountFollow = async (userId: string) => {
   try {
     // I did it in two ways. "following" with callback of countDocuments and "followed" with a promise
@@ -327,33 +385,7 @@ const getCountFollow = async (userId: string) => {
   }
 }
 
-// // METODO PARA ACTUALIZAR LOS DATOS DE UN USUARIO
-function updateUser(req: any, res: any) {
-  const userId = req.params.id
-  const update = req.bolet
 
-// Delete the password that comes in the user request
-  delete update.password
-  
-  if (userId !== req.user) {
-    const error = new Error('No tienes permiso para actualizar este usuario')
-    return res.json({
-      msg: error.message,
-    })
-  }
-
-  const userUpdated = User.findByIdAndUpdate(userId, update, { new: true })
-  if (!userUpdated) {
-    const error = new Error('No se ha podido actualizar el usuario')
-    return res.json({ msg: error.message })
-  }
-
-  try {
-    return res.json({ user: userUpdated })
-  } catch (error) {
-    logError(error)
-  }
-}
 
 export default {
   saveUser,
