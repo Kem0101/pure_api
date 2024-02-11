@@ -26,4 +26,4 @@ jobs:
           node-version: 18.5.0
       
       - name: Run script
-        run: node ./__test__/example.spec.ts 
+        run: node ./__tests__/example.spec.ts 
