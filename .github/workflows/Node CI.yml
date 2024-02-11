@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18.5.0
+      - name: List files into directory
+        run: ls -l
       
       - name: Run script
         run: node ../__tests__/example.spec.ts 
