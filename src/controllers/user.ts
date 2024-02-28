@@ -366,18 +366,12 @@ async function followUserIds(userId: string) {
   }
 }
 
-const getCountFollow = async (userId: string) => {
+const getCountFollow = async (userId: object) => {
   try {
     // I did it in two ways. "following" with callback of countDocuments and "followed" with a promise
-    const following = await Follow.countDocuments({ user: userId }).then(
-      (count: any) => count,
-    )
-    const followed = await Follow.countDocuments({ followed: userId }).then(
-      (count: any) => count,
-    )
-    const publication = await Publication.countDocuments({
-      user: userId,
-    }).then((count: any) => count)
+    const following = await Follow.countDocuments({ user: userId })
+    const followed = await Follow.countDocuments({ followed: userId })
+    const publication = await Publication.countDocuments({ user: userId})
 
     return { following, followed, publication }
   } catch (error) {

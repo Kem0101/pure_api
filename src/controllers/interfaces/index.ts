@@ -33,6 +33,7 @@ export interface IFollow extends Document {
 }
 
 export interface IPublication extends Document {
+  id?: string,
   text: string
   file: string
   created_at: Date

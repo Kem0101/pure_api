@@ -1,6 +1,8 @@
 'use strict'
 
 import mongoose from 'mongoose'
+import paginate from 'mongoose-paginate-v2'
+import { IPublication } from 'src/controllers/interfaces'
 
 const PublicationSchema = new mongoose.Schema({
   text: {
@@ -17,5 +19,7 @@ const PublicationSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 })
 
-const Publication = mongoose.model('Publication', PublicationSchema)
+PublicationSchema.plugin(paginate)
+
+const Publication = mongoose.model<IPublication, mongoose.PaginateModel<IPublication>>('Publication', PublicationSchema)
 export default Publication

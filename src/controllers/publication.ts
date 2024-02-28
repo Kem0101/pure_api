@@ -3,8 +3,6 @@
 'use strict'
 
 import { Request, Response } from 'express'
-import path from 'path'
-import fs from 'fs'
 import 'mongoose-pagination'
 
 import Publication from '../models/publication'
@@ -13,117 +11,106 @@ import { IFollow, IPublication, IUser } from './interfaces'
 
 
 async function savePublication(req: Request | any, res: Response) {
-  const { text, file } = req.body
-
-  if (!text && !file) {
-    const error = new Error('La publicación no puede estar vacía')
-    return res.json({ msg: error.message })
-  }
-
   try {
-    const publication = new Publication(req.body) as IPublication
-    publication.user.id = req.user?.id
+    const { text, file, userId } = req.body
+
+    if(userId !== req.user.id){
+      return res.status(403).json({ msg: 'No tienes permiso para realizar esta operación' })
+    }
+
+    if (!text && !file) {
+      return res.status(400).json({ msg: 'La publicación no puede estar vacía' })
+    }
+    
+    const publication = new Publication({ text, file, user: req.user.id}) as IPublication
     const publicationSaved = await publication.save()
-    res.json(publicationSaved)
+    res.status(201).json(publicationSaved) 
+    
   } catch (error) {
-    console.log(error)
+    return res.status(500).json({ msg: 'Error interno del servidor'})
   }
 }
 
-// TIMELINE PUBLICATIONS METHOD (remove all publications)
-// REVIEW THIS METHOD
-function getPublications(req: Request | any, res: Response) {
-  let page = 1
-  if (req.params.page) {
-    page = parseInt(req.params.page)
-  }
-  const itemsPerPage = 5
-  // let total: number
+// TIMELINE PUBLICATIONS METHOD 
+async function getPublications(req: Request | any, res: Response) {
 
-  Follow.find({ user: req.user })
-    .populate('followed')
-    .exec((err: string, follows: IFollow[]) => {
-      if (err) {
-        const error = new Error('Error al devolver seguimiento')
-        return res.status(500).json({ msg: error.message })
+  try {
+    const identityId = req.user
+    const page = req.params.page | 1
+
+    const paginationOptions = {
+      page,
+      limit: 5,
+      sort: { createdAt: -1 }, 
+      populate: { path: 'user', select: ''},
+      select: '',
+    }
+
+    const follows = await Follow.find({ user: identityId }).populate('followed')
+    if (!follows) {
+      return res.status(400).json({ msg: 'Error al devolver seguimiento' })
+    }
+
+    const follows_clean: IUser[] = follows.reduce((acc: any, follow: IFollow) => {
+      if(follow.followed && typeof follow.followed === 'object'){
+        acc.push(follow.followed)
       }
-
-      const follows_clean: IUser[] = []
-
-      follows.forEach((follow: IFollow) => {
-        if(follow.followed && typeof follow.followed === 'object'){
-          follows_clean.push(follow.followed)
-        }
-      })
-
-      Publication.find({ user: { $in: follows_clean } })
-        .sort('-creacted_at')
-        .populate({ path: 'user', select: '-password -confirmed - role -__v',})
-        .paginate(
-          page,
-          itemsPerPage,
-          (err: string, publications: IPublication[], total: number) => {
-            if (err) {
-              const error = new Error('Error al devolver publicaciones')
-              return res.status(500).json({ msg: error.message })
-            }
-
-            if (!publications) {
-              const error = new Error('No hay publicaciones')
-              return res.status(204).json({ msg: error.message })
-            }
-
-           // Remove the user.password property from each publication
-            publications = publications.map((publication) => {
-              const newPublication = publication.toObject()
-               // Extracts the 'user' object and removes unwanted properties
-            const { ...userResponse } = newPublication.user
-            
-            // Replace 'user' with the new object 'user' without the deleted properties
-            newPublication.user = userResponse
-
-            // Returns the modified object, which must match the structure of IPublication
-            return newPublication as IPublication
-            })
-
-            return res.status(200).send({
-              total_items: total,
-              pages: Math.ceil(total / itemsPerPage),
-              page: page,
-              publications,
-            })
-          },
-        )
+      return acc
+    }, []) 
+    
+    const searchCriteria = { user: { $in: follows_clean }}
+    const publications = await Publication.paginate(searchCriteria, paginationOptions)
+    if (!publications || !publications.docs) {
+      return res.status(404).json({ msg: 'No hay publicaciones' })
+    }
+    
+    const publicationsToDisplay = publications.docs.map(publication => {
+      const { password, token, role, _id, email, username, confirmed, __v, ...user } = publication.toObject().user
+      return { ...publication.toObject(), user}
     })
+      
+    return res.status(200).send({ publicationsToDisplay })        
+   
+  } catch (error) {
+    return res.status(500).json({ msg: 'Error interno del servidor'})
+  }
+  
 }
 
 // // METODO PARA DEVOLVER UNA PUBLICACION EN CONCRETO
-function getPublication(req: Request, res: Response) {
-  const publicationId = req.params.id
+async function getPublication(req: Request, res: Response) {
 
-  const publication = Publication.findById(publicationId)
-  if (!publication) return res.json({ msg: 'No existe la publicación' })
+  try {
+    const publicationId = req.params.id
 
-  return res.json({ publication })
+    const publication = await Publication.findById(publicationId)
+    if (!publication) return res.status(404).json({ msg: 'No existe la publicación' })
+
+    return res.status(200).json({ publication })
+    
+  } catch (error) {
+    return res.status(500).json({ msg: 'Error interno del servidor'})
+  }
 }
 
 
-function deletePublication(req: Request | any, res: Response) {
-  const publicationId = req.params.id
-
-  const publicationRemoved = Publication.find({
-    user: req.user,
-    _id: publicationId,
-  }).remove()
-  if (!publicationRemoved) {
-    const error = new Error('No se ha borrado la publicación')
-    return res.json({ msg: error.message })
-  }
-
+async function deletePublication(req: Request | any, res: Response) {
   try {
-    return res.json({ msg: 'Publicación borrada correctamente' })
+    const publicationId = req.params.id
+    const userId = req.user.id
+
+    const publicationRemoved = await Publication.findOneAndRemove({
+      _id: publicationId,
+      user: userId,
+    })
+    if (!publicationRemoved) {
+      return res.json({ msg: 'Publicación no encontrada o no pertenece al usuario' })
+    }
+
+    return res.status(200).json({ publicationRemoved, msg: 'Publicación eliminada correctamente' })
+    
   } catch (error) {
-    console.log(error)
+    return res.status(500).json({ msg: 'Error interno del servidor'})
   }
 }
 
