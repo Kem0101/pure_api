@@ -28,17 +28,17 @@ import { logError } from '../helpers/loggers'
  * @returns { IUser }
  */
 async function saveUser(req: Request, res: Response) {
-  const { email, fullname } = req.body
-
-  // Prevent duplicate user
-  const existUser = await User.findOne({ email })
-  if (existUser) {
-    const error = new Error('Email no disponible')
-    return res.status(400).json({ msg: error.message })
-  }
+  
+  const { fullname, username, email, password  } = req.body
 
   try {
-    const user = new User(req.body) as IUser
+  // Prevent duplicate user
+    const existUser = await User.findOne({ email })
+    if (existUser) {
+      return res.status(400).json({ msg: 'Email no disponible' })
+    }
+
+    const user = new User({ fullname, username, email, password }) as IUser
     const userSaved: IUser = await user.save()
 
     // Send email confirmation
@@ -48,57 +48,65 @@ async function saveUser(req: Request, res: Response) {
       token: userSaved.token,
     })
 
-    return res.json(userSaved)
+    return res.status(201).json({ msg: 'Usuario creado con exito' })
+
   } catch (error: unknown) {
-    logError(error)    
+    logError(error)  
+    return res.status(500).json({ error, msg: 'Error interno del API'})  
   }
 }
 
 
 async function userConfirm(req: Request, res: Response) {
+  
   const { token } = req.params
 
-  const confirm = await User.findOne({ token })
-  if (confirm === null) {
-    const error = new Error('Token no valido')
-    return res.status(404).json({ msg: error.message })
-  }
   try {
+    const confirm = await User.findOne({ token })
+    if (confirm === null) {
+      return res.status(404).json({ msg: 'Token no valido' })
+    }
+    
     (confirm.token = null), (confirm.confirmed = true)
     await confirm.save()
 
-    res.json({ msg: 'Usuario confirmado correctamente' })
+    res.status(200).json({ msg: 'Usuario confirmado correctamente' })
   } catch (error) {
     logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
-// // METODO PARA LOGUEAR UN USUARIO
+// USER LOGIN
 async function userLogin(req: Request, res: Response) {
+  
   const { email, password } = req.body
 
-  const existUser = await User.findOne({ email })
-  if (existUser == null) {
-    const error = new Error('El usuario no existe')
-    return res.status(404).json({ msg: error.message })
-  }
-  // Check if the user has confirmed his account
-  if (!existUser.confirmed) {
-    const error = new Error('Tu cuenta no ha sido confirmada')
-    return res.status(401).json({ msg: error.message })
-  }
-  // Check if password is correct
-  if ((await existUser.authenticate(password)) === true) {
+  try {
+    const existUser = await User.findOne({ email })
+    if (existUser == null) {
+        return res.status(404).json({ msg: 'El usuario no existe' })
+    }
+    // Check if the user has confirmed his account
+    if (!existUser.confirmed) {
+        return res.status(401).json({ msg: 'Tu cuenta no ha sido confirmada' })
+    }
+
+    const isPasswordCorrect = await existUser.authenticate(password)
+    if (!isPasswordCorrect) { 
+        return res.status(401).json({ msg: 'La contraseña es incorrecta'})
+    }
     // Authenticate user
-    return res.json({
+    return res.status(200).json({
       _id: existUser._id,
       fullname: existUser.fullname,
       email: existUser.email,
       token: generateJWT(existUser._id),
     })
-  } else {
-    const error = new Error('El password es incorrecto')
-    return res.status(400).json({ msg: error.message })
+    
+  } catch (error) {
+    logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
@@ -106,20 +114,20 @@ async function userLogin(req: Request, res: Response) {
 function homeUser(req: Request, res: Response) {
   const { user }: any = req
 
-  return res.json(user)
+  return res.status(200).json(user)
 }
 
 
 async function forgotPassword(req: Request, res: Response) {
+  
   const { email } = req.body
 
-  const existUser = await User.findOne({ email })
-  if (existUser == null) {
-    const error = new Error('El usuario no existe')
-    return res.json({ msg: error.message })
-  }
-
   try {
+    const existUser = await User.findOne({ email })
+    if (existUser == null) {
+      return res.status(404).json({ msg: 'El usuario no existe' })
+    }
+
     existUser.token = generateId()
     await existUser.save()
 
@@ -130,11 +138,11 @@ async function forgotPassword(req: Request, res: Response) {
       token: existUser.token,
     })
 
-    return res.json({
-      msg: 'Hemos enviado un email con los pasos para cambiar la contraseña',
-    })
+    return res.status(200).json({ msg: 'Hemos enviado un email con los pasos para cambiar la contraseña' })
+
   } catch (error) {
     logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
@@ -143,33 +151,45 @@ async function forgotPassword(req: Request, res: Response) {
 async function checkToken(req: Request, res: Response) {
   const { token } = req.params
 
-  const validToken = await User.findOne({ token })
-  if (validToken !== null) {
-    return res.json({ msg: 'Token válido y el usuario existe' })
-  } else {
-    const error = new Error('Token no válido')
-    return res.json({ msg: error.message })
+  try {
+    const validToken = await User.findOne({ token })
+    if (validToken !== null) {
+      return res.status(200).json({ msg: 'Token válido' })
+    } else {
+      return res.status(400).json({ msg: 'Token no válido' })
+    }
+  } catch (error) {
+    logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
 
 // Method to assign a new password
 async function newPassword(req: Request, res: Response) {
+  
   const { token } = req.params
   const { password } = req.body
 
-  const user = await User.findOne({ token })
-  if (user == null) {
-    const error = new Error('Hubo un error')
-    return res.json({ msg: error.message })
+  if(!password || password < 7){
+    return res.status(400).json({ msg: 'La contraseña debe ser de al menos 7 dígitos'})
   }
+
   try {
+    const user = await User.findOne({ token })
+    if (user === null) {
+      return res.status(400).json({ msg: 'Token inválido o expiró' })
+    }
+    
     user.token = null
     user.password = password
     await user.save()
-    return res.json({ msg: 'Password modificado correctamente' })
+
+    return res.status(200).json({ msg: 'Password modificado correctamente' })
+
   } catch (error) {
     logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
@@ -179,20 +199,25 @@ async function newPassword(req: Request, res: Response) {
 // THE VALUE OBJECT THAT IT SHOULD BRING IF IT FOLLOWS AND IS FOLLOWED BY THE USER THAT IS LOGGED IN, IS EMPTY.
 async function getUser(req: Request | any, res: Response) {
   const userId = req.params.id
+  const userLog = req.user._id
 
-  const user = await User.findById(userId)
+  try {
+    const user = await User.findById(userId)
     if (!user) {
-      const error = new Error('El usuario no existe')
-      return res.status(404).send({ msg: error.message })
+      return res.status(404).send({ msg: 'El usuario no existe' })
     }
 
     const { password, token, role, confirmed, image, __v, ...userResponse } = user.toObject()
 
     // This next code block let me know if I am following this user and if he/she is following me
-    await followThisUser(req.user._id, userId).then((value) => {
+    await followThisUser(userLog, userId).then((value) => {
       user.password == undefined
-      return res.json({ userResponse, value })
+      return res.status(200).json({ userResponse, value })
     })
+  } catch (error) {
+    logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
+  }
   
 }
 
@@ -200,98 +225,88 @@ async function getUser(req: Request | any, res: Response) {
 // METHOD FOR RETURNING A LIST OF PAGINATED USERS (Check the pagination)
 async function getUsers(req: Request | any, res: Response) {
  
-  try {
-    const identityId = req.user
-    let page = 1
+  const identityId = req.user
+  const page = req.params.page || 1
 
-    if (req.params.page) {
-      page = req.params.page
-    }
-
-    const itemsPerPage = 5
-
-    const options = {
-      page: page,
-      limit: itemsPerPage
-    }
+  const options = {
+    page: page,
+    limit: 5
+  }
    
+  try {
     const users = await User.paginate({}, options)
     if(!users || !users.docs){
-      const error = new Error('No hay usuarios disponibles')
-      return res.send(404).json({ msg: error.message})
+      return res.send(404).json({ msg: 'No hay usuarios disponibles' })
     }
 
-    const userResponse = users.docs.map((user) => {
-      const usersSinitized = user.toObject()
-      delete usersSinitized.password
-      delete usersSinitized.role
-      delete usersSinitized.image
-      delete usersSinitized.__v
-      delete usersSinitized.token
-      delete usersSinitized.confirmed
-      return usersSinitized
-    }) 
+    const userResponse = users.docs.map(({ passwor, role, image,token, confirmed, __v, ...user }) => user)
+    
 
-    followUserIds(identityId).then((value) => {
-      return res.json({
+    const { following, followed } = await followUserIds(identityId)
+      return res.status(200).json({
         users: userResponse,
-        user_following: value.following,
-        user_followed_me: value.followed,
+        user_following: following,
+        user_followed_me: followed,
         total: users.totalDocs,
         pages: users.totalPages
-      })
-    })
+      }) 
   }    
   catch (error: unknown) {
     logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
 
 // METHOD TO COUNT THE USERS I FOLLOW, THOSE WHO FOLLOW ME AND PUBLICATIONS
-function getCounters(req: Request | any, res: Request | any) {
-  let userId = req.user
-  if (req.params.id) {
-    userId = req.params.id
-  }
+async function getCounters(req: Request | any, res: Request | any) {
 
-  getCountFollow(userId).then((value) => {
-    return res.json({ value })
-  })
+  const userId = req.params.id || req.user._id
+
+  try {
+    const value = await getCountFollow(userId)
+    if(!value) {
+      return res.status(500).json({ msg: 'Algo salio mal'})
+    }else {
+      return res.status(200).json({ value })
+    }
+
+  } catch (error) {
+    logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
+  }
+    
+  
 }
 
 // METHOD TO UPDATE A USER'S DATA
 async function updateUser(req: Request | any, res: Response) {
   
-  const userId: string = req.params.id
-  const userIdentity = req.user._id
-  const update = req.body
+    const userId = req.params.id
+    const userIdentity = req.user._id
+    const update = { ...req.body }
 
-// Delete the password that comes in the user request
-  delete update.password
-  
-  if (userIdentity.toString() !== userId) {
-    const error = new Error('No tienes permiso para actualizar este usuario')
-    return res.json({
-      msg: error.message,
-    })
-  }
+  // Delete the password that comes in the user request
+    delete update.password
+    
+    if (userIdentity.toString() !== userId) {
+      return res.status(403).json({ msg: 'No tienes permiso para actualizar este usuario' })
+    }
 
-  try {
+    try {
 
     const userUpdated = await User.findByIdAndUpdate(userId, update, { new: true })
     if (!userUpdated) {
-      const error = new Error('No se ha podido actualizar el usuario')
-      return res.json({ msg: error.message })
+      return res.status(404).json({ msg: 'No se ha podido actualizar el usuario' })
     }
 
     const { password, token, role, confirmed, image, __v, ...newUser } = userUpdated.toObject()
     
-
-    return res.json({ user: newUser })
+    return res.status(200).json({ user: newUser })
 
   } catch (error) {
     logError(error)
+    return res.status(500).json({ msg: 'Error interno del API'})
   }
 }
 
