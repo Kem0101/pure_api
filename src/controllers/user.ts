@@ -318,72 +318,44 @@ async function followThisUser(identityUserId: string, userId: string) {
     const following = await Follow.findOne({
       user: identityUserId,
       followed: userId,
-    }).then((follow: object) => {
-      console.log(follow)
-      return follow
     })
 
     const followed = await Follow.findOne({
       user: userId,
       followed: identityUserId,
-    }).then((follow: IFollow) => {
-      console.log(follow)
-      return follow
     })
 
-    return {
-      following,
-      followed,
-    }
+    return { following, followed }
   } catch (error) {
     logError(error)
+    return { following: null, followed: null}
   }
 }
 
 async function followUserIds(userId: string) {
-  const following = await Follow.find({ user: userId })
-    .select({ _id: 0, __v: 0, user: 0 })
-    .exec()
-    .then((following: any) => {
-      return following
-    })
-    .catch((error: unknown) => {
-      logError(error)
-    })
-
-  const followed = await Follow.find({ followed: userId })
-    .select({ _id: 0, __v: 0, followed: 0 })
-    .exec()
-    .then((followed: any) => {
-      return followed
-    })
-    .catch((error: unknown) => {
-      console.log(error)
-    })
-
-  // Procesar following ids
-  const following_clean: any[] = []
-
-  following.forEach((follow: any) => {
-    following_clean.push(follow.followed)
-  })
-
-  // Procesar followed ids
-  const followed_clean: any[] = []
-
-  followed.forEach((follow: any) => {
-    followed_clean.push(follow.user)
-  })
-
-  return {
-    following: following_clean,
-    followed: followed_clean,
+  try {
+    const following = await Follow.find({ user: userId }).select({ _id: 0, __v: 0, user: 0 }).exec()
+    
+    const followed = await Follow.find({ followed: userId }).select({ _id: 0, __v: 0, followed: 0 }).exec()
+      
+    // Procesar following ids
+    const following_clean: any[] = following.map((follow: any) => follow.followed)
+  
+    // Procesar followed ids
+    const followed_clean: any[] = followed.map((follow: any) => follow.user)
+  
+    return {
+      following: following_clean,
+      followed: followed_clean,
+    }
+  } catch (error) {
+    logError(error)
+    return { following: [], followed: [] }
   }
 }
 
-const getCountFollow = async (userId: object) => {
+const getCountFollow = async (userId: any) => {
   try {
-    // I did it in two ways. "following" with callback of countDocuments and "followed" with a promise
     const following = await Follow.countDocuments({ user: userId })
     const followed = await Follow.countDocuments({ followed: userId })
     const publication = await Publication.countDocuments({ user: userId})
@@ -391,6 +363,7 @@ const getCountFollow = async (userId: object) => {
     return { following, followed, publication }
   } catch (error) {
     logError(error)
+    return { following: null, followed: null, publication: null }
   }
 }
 
