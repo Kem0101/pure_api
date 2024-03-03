@@ -17,7 +17,7 @@ import generateId from '../helpers/generateId'
 import emailRegister from '../helpers/emailRegister'
 import emailOlvidePassword from '../helpers/emailForgotPassword'
 
-import { IFollow, IUser } from './interfaces'
+import { IUser } from './interfaces'
 import { logError } from '../helpers/loggers'
 
 // --------------------------------------------------------
@@ -202,18 +202,15 @@ async function getUser(req: Request | any, res: Response) {
   const userLog = req.user._id
 
   try {
-    const user = await User.findById(userId)
+    const user = await User.findById(userId).select('password, token, role, confirmed, image, __v')
     if (!user) {
       return res.status(404).send({ msg: 'El usuario no existe' })
     }
 
-    const { password, token, role, confirmed, image, __v, ...userResponse } = user.toObject()
-
     // This next code block let me know if I am following this user and if he/she is following me
-    await followThisUser(userLog, userId).then((value) => {
-      user.password == undefined
-      return res.status(200).json({ userResponse, value })
-    })
+    const followerInfo = await followThisUser(userLog, userId)  
+    return res.status(200).json({ user: user.toObject(), followerInfo })
+    
   } catch (error) {
     logError(error)
     return res.status(500).json({ msg: 'Error interno del API'})

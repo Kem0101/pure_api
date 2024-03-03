@@ -95,16 +95,18 @@ async function getPublication(req: Request, res: Response) {
 
 
 async function deletePublication(req: Request | any, res: Response) {
-  try {
+  
     const publicationId = req.params.id
     const userId = req.user.id
 
+  try {
     const publicationRemoved = await Publication.findOneAndRemove({
       _id: publicationId,
       user: userId,
     })
+    
     if (!publicationRemoved) {
-      return res.json({ msg: 'Publicación no encontrada o no pertenece al usuario' })
+      return res.status(404).json({ msg: 'Publicación no encontrada o no pertenece al usuario' })
     }
 
     return res.status(200).json({ publicationRemoved, msg: 'Publicación eliminada correctamente' })
