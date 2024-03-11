@@ -1,0 +1,14 @@
+name: My first action
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci_cd:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Echo the message
+        run: |
+          echo "Hola Sam"
