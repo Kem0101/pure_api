@@ -9,6 +9,11 @@ jobs:
   ci_cd:
     runs-on: ubuntu-18.04
     steps:
-      - name: Echo the message
-        run: |
-          echo "Hola Sam"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.15.0"
+      - name: Install dependencies
+        run: npm install
