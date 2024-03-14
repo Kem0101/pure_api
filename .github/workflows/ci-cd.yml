@@ -1,4 +1,4 @@
-name: My first action
+name: CI/CD for API
 
 on:
   push:
@@ -6,13 +6,16 @@ on:
       - main
 
 jobs:
-  deployment:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout the code
+        uses: actions/checkout@v4
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Install dependencies
         run: npm install
+      - name: Build
+        run: npm run build
