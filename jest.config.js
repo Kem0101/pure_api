@@ -1,11 +1,12 @@
-"use strict";
+/* eslint-disable no-undef */
+"use strict"
 /* eslint-disable @typescript-eslint/semi */
 /* eslint-disable @typescript-eslint/comma-dangle */
 /**
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
  */
-Object.defineProperty(exports, "__esModule", { value: true });
+Object.defineProperty(exports, "__esModule", { value: true })
 const config = {
     // All imported modules in your tests should be mocked automatically
     // automock: false,
@@ -141,6 +142,6 @@ const config = {
     // watchPathIgnorePatterns: [],
     // Whether to use watchman for file crawling
     // watchman: true,
-};
-exports.default = config;
+}
+exports.default = config
 //# sourceMappingURL=jest.config.js.map

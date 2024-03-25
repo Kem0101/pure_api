@@ -29,7 +29,6 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // Upload Routes
-// // Rutas
 app.use('/api', userRoutes)
 app.use('/api', publicationRoutes)
 app.use('/api', messageRoutes)
@@ -43,3 +42,6 @@ const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}!`)
 })
+
+
+export default app
