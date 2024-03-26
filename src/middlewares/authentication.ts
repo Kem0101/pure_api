@@ -13,7 +13,7 @@ const checkAuth = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: Request | any,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   let token
   if (
@@ -25,11 +25,11 @@ const checkAuth = async (
 
       const decoded = jwt.verify(
         token,
-        process.env.SECRET_PASS as string,
+        process.env.SECRET_PASS as string
       ) as JwtPayload
 
       req.user = await User.findById(decoded.id).select(
-        '-password -token -confirmed',
+        '-password -token -confirmed'
       )
 
       return next()

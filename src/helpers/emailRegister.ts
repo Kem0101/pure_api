@@ -9,8 +9,8 @@ const emailRegister = async (datos: any) => {
     port: process.env.EMAIL_PORT,
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
+      pass: process.env.EMAIL_PASSWORD
+    }
   } as SMTPTransport.Options)
 
   const { email, fullname, token } = datos
@@ -25,7 +25,7 @@ const emailRegister = async (datos: any) => {
            <a href="${process.env.FRONTEND_URL}/confirmar/${token}"> Comprobar cuenta </a></p>
 
            <p>Si tu no creaste esta cuenta, puedes ignorar este mensaje!</p>
-    `,
+    `
   })
   console.log('Mensaje enviado: %s', info.messageId)
 }

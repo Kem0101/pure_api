@@ -47,8 +47,8 @@ function getReceiveMessages(req: Request | any, res: Response) {
   const itemPerPage = 5
 
   const messageQuery = Message.find({ receiver: userId })
-   // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
-    messageQuery
+  // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
+  messageQuery
     .populate('emitter', '_id fullname image')
     .paginate(
       page,
@@ -67,7 +67,7 @@ function getReceiveMessages(req: Request | any, res: Response) {
         return res.json({
           total: total,
           pages: Math.ceil(total / itemPerPage),
-          retrievedMessages,
+          retrievedMessages
         })
       }
     )
@@ -85,7 +85,7 @@ function getEmmittedMessages(req: Request | any, res: Response) {
   const itemPerPage = 5
 
   Message.find({ emitter: userId })
-  // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
+    // In pupulate it allows me to pass a second parameter specifying which fields I want to return in the view.
     .populate('reveiver emitter', '_id name surname nick image')
     .paginate(
       page,
@@ -104,7 +104,7 @@ function getEmmittedMessages(req: Request | any, res: Response) {
         return res.json({
           total: total,
           pages: Math.ceil(total / itemPerPage),
-          messages,
+          messages
         })
       }
     )
@@ -147,6 +147,6 @@ export default {
   saveMessage,
   getReceiveMessages,
   getEmmittedMessages,
-  getUnviewedMessages,
+  getUnviewedMessages
   // setViewedMessages,
 }

@@ -7,50 +7,49 @@ import generateId from '../helpers/generateId'
 import { IUser } from 'src/controllers/interfaces'
 import paginate from 'mongoose-paginate-v2'
 
-
 const UserSchema = new mongoose.Schema({
   fullname: {
     type: String,
     required: [true, 'Name required'],
-    trim: true,
+    trim: true
   },
 
   username: {
     type: String,
     required: [true, 'Username required'],
     unique: true,
-    trim: true,
+    trim: true
   },
 
   email: {
     type: String,
     required: [true, 'Email required'],
     unique: true,
-    trim: true,
+    trim: true
   },
 
   password: {
     type: String,
-    required: [true, 'Password required'],
+    required: [true, 'Password required']
   },
 
   role: {
     type: String,
-    default: null,
+    default: null
   },
 
   image: {
     type: String,
-    default: null,
+    default: null
   },
   token: {
     type: String,
-    default: generateId(),
+    default: generateId()
   },
   confirmed: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 })
 
 //  Este bloque de codigo es una especie de middleware que hashea el password antes de almacenar
@@ -69,10 +68,13 @@ UserSchema.pre<any>('save', async function (next) {
 
 // Comprobar el password del usuario
 UserSchema.methods.authenticate = function (passwordForm: string): boolean {
-  return bcrypt.compareSync(passwordForm, (this as IUser).password) 
+  return bcrypt.compareSync(passwordForm, (this as IUser).password)
 }
 
 UserSchema.plugin(paginate)
 
-const User = mongoose.model<IUser, mongoose.PaginateModel<IUser>>('User', UserSchema)
+const User = mongoose.model<IUser, mongoose.PaginateModel<IUser>>(
+  'User',
+  UserSchema
+)
 export default User

@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
 const path = require('path')
-const webpackNodeExternals = require('webpack-node-externals') 
+const webpackNodeExternals = require('webpack-node-externals')
 
 module.exports = {
   mode: 'development',
   entry: {
-      'index': './index.ts'
+    index: './index.ts'
   },
   output: {
     path: path.join(__dirname, '/dist'),
@@ -24,9 +24,7 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: [
-      '.tsx', '.ts', '.js'
-    ]
+    extensions: ['.tsx', '.ts', '.js']
   },
   externals: [webpackNodeExternals()]
 }

@@ -11,13 +11,12 @@ const app = express()
 dotenv.config() // dotenv para configurar variables de entornos
 conectionDB() // llamando a la función que hace la conexion con la base de datos en database.ts
 
-
 // Configurate Headers and Cors
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL)
   res.header(
     'Access-Control-Allow-Headers',
-    'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method',
+    'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method'
   )
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
   res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
@@ -42,6 +41,5 @@ const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}!`)
 })
-
 
 export default app

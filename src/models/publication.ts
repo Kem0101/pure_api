@@ -6,20 +6,23 @@ import { IPublication } from 'src/controllers/interfaces'
 
 const PublicationSchema = new mongoose.Schema({
   text: {
-    type: String,
+    type: String
   },
   file: {
-    type: String,
+    type: String
   },
   created_at: {
     type: Date,
     required: true,
-    default: Date.now(),
+    default: Date.now()
   },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 })
 
 PublicationSchema.plugin(paginate)
 
-const Publication = mongoose.model<IPublication, mongoose.PaginateModel<IPublication>>('Publication', PublicationSchema)
+const Publication = mongoose.model<
+  IPublication,
+  mongoose.PaginateModel<IPublication>
+>('Publication', PublicationSchema)
 export default Publication

@@ -5,24 +5,24 @@ import mongoose from 'mongoose'
 const MessageSchema = new mongoose.Schema({
   text: {
     type: String,
-    required: true,
+    required: true
   },
   viewed: {
     type: String,
-    default: false,
+    default: false
   },
   created_at: {
-    type: Number,
+    type: Number
   },
   emitter: {
     type: mongoose.Types.ObjectId,
-    ref: 'User',
+    ref: 'User'
   },
   receiver: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-  },
+    required: true
+  }
 })
 
 const Message = mongoose.model('Message', MessageSchema)

@@ -1,6 +1,4 @@
-
-import  { Document } from "mongoose"
-
+import { Document } from 'mongoose'
 
 export interface IUser extends Document {
   fullname: string
@@ -26,19 +24,17 @@ export interface IUserResponse extends Document {
   token: string | null
 }
 
-
 export interface IFollow extends Document {
-  user: IUser 
-  followed: IUser 
+  user: IUser
+  followed: IUser
 }
 
 export interface IPublication extends Document {
-  id?: string,
+  id?: string
   text: string
   file: string
   created_at: Date
   user: IUser
-  
 }
 
 export interface IMessage extends Document {
@@ -48,5 +44,3 @@ export interface IMessage extends Document {
   emitter: IUser
   receiver: IUser
 }
-
-

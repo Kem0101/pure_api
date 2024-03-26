@@ -1,9 +1,7 @@
-
-import { IUser } from "../interfaces" 
-
+import { IUser } from '../interfaces'
 
 declare namespace Express {
-    export interface Request {
-      user?: IUser;
-    }
+  export interface Request {
+    user?: IUser
   }
+}

@@ -22,17 +22,16 @@ import { logError } from '../helpers/loggers'
 
 // --------------------------------------------------------
 /**
- * 
- * @param req 
- * @param res 
+ *
+ * @param req
+ * @param res
  * @returns { IUser }
  */
 async function saveUser(req: Request, res: Response) {
-  
-  const { fullname, username, email, password  } = req.body
+  const { fullname, username, email, password } = req.body
 
   try {
-  // Prevent duplicate user
+    // Prevent duplicate user
     const existUser = await User.findOne({ email })
     if (existUser) {
       return res.status(400).json({ msg: 'Email no disponible' })
@@ -45,20 +44,17 @@ async function saveUser(req: Request, res: Response) {
     await emailRegister({
       email,
       fullname,
-      token: userSaved.token,
+      token: userSaved.token
     })
 
     return res.status(201).json({ msg: 'Usuario creado con exito' })
-
   } catch (error: unknown) {
-    logError(error)  
-    return res.status(500).json({ error, msg: 'Error interno del API'})  
+    logError(error)
+    return res.status(500).json({ error, msg: 'Error interno del API' })
   }
 }
 
-
 async function userConfirm(req: Request, res: Response) {
-  
   const { token } = req.params
 
   try {
@@ -66,60 +62,56 @@ async function userConfirm(req: Request, res: Response) {
     if (confirm === null) {
       return res.status(404).json({ msg: 'Token no valido' })
     }
-    
-    (confirm.token = null), (confirm.confirmed = true)
+
+    ;(confirm.token = null), (confirm.confirmed = true)
     await confirm.save()
 
     res.status(200).json({ msg: 'Usuario confirmado correctamente' })
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
 
 // USER LOGIN
 async function userLogin(req: Request, res: Response) {
-  
   const { email, password } = req.body
 
   try {
     const existUser = await User.findOne({ email })
     if (existUser == null) {
-        return res.status(404).json({ msg: 'El usuario no existe' })
+      return res.status(404).json({ msg: 'El usuario no existe' })
     }
     // Check if the user has confirmed his account
     if (!existUser.confirmed) {
-        return res.status(401).json({ msg: 'Tu cuenta no ha sido confirmada' })
+      return res.status(401).json({ msg: 'Tu cuenta no ha sido confirmada' })
     }
 
     const isPasswordCorrect = await existUser.authenticate(password)
-    if (!isPasswordCorrect) { 
-        return res.status(401).json({ msg: 'La contraseña es incorrecta'})
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ msg: 'La contraseña es incorrecta' })
     }
     // Authenticate user
     return res.status(200).json({
       _id: existUser._id,
       fullname: existUser.fullname,
       email: existUser.email,
-      token: generateJWT(existUser._id),
+      token: generateJWT(existUser._id)
     })
-    
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
 
-// User Profile, this method takes the user to the home page after authentication 
+// User Profile, this method takes the user to the home page after authentication
 function homeUser(req: Request, res: Response) {
   const { user }: any = req
 
   return res.status(200).json(user)
 }
 
-
 async function forgotPassword(req: Request, res: Response) {
-  
   const { email } = req.body
 
   try {
@@ -135,17 +127,17 @@ async function forgotPassword(req: Request, res: Response) {
     await emailOlvidePassword({
       email,
       fullname: existUser.fullname,
-      token: existUser.token,
+      token: existUser.token
     })
 
-    return res.status(200).json({ msg: 'Hemos enviado un email con los pasos para cambiar la contraseña' })
-
+    return res.status(200).json({
+      msg: 'Hemos enviado un email con los pasos para cambiar la contraseña'
+    })
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
-
 
 // Method to check password
 async function checkToken(req: Request, res: Response) {
@@ -160,19 +152,19 @@ async function checkToken(req: Request, res: Response) {
     }
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
 
-
 // Method to assign a new password
 async function newPassword(req: Request, res: Response) {
-  
   const { token } = req.params
   const { password } = req.body
 
-  if(!password || password < 7){
-    return res.status(400).json({ msg: 'La contraseña debe ser de al menos 7 dígitos'})
+  if (!password || password < 7) {
+    return res
+      .status(400)
+      .json({ msg: 'La contraseña debe ser de al menos 7 dígitos' })
   }
 
   try {
@@ -180,19 +172,17 @@ async function newPassword(req: Request, res: Response) {
     if (user === null) {
       return res.status(400).json({ msg: 'Token inválido o expiró' })
     }
-    
+
     user.token = null
     user.password = password
     await user.save()
 
     return res.status(200).json({ msg: 'Password modificado correctamente' })
-
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
-
 
 // METHOD TO EXTRACT USER DATA
 // THIS METHOD IS PENDING TO BE REVIEWED, IT CURRENTLY FETCHES THE USER REQUESTED BY ITS ID BUT
@@ -202,26 +192,24 @@ async function getUser(req: Request | any, res: Response) {
   const userLog = req.user._id
 
   try {
-    const user = await User.findById(userId).select('password, token, role, confirmed, image, __v')
+    const user = await User.findById(userId).select(
+      'password, token, role, confirmed, image, __v'
+    )
     if (!user) {
       return res.status(404).send({ msg: 'El usuario no existe' })
     }
 
     // This next code block let me know if I am following this user and if he/she is following me
-    const followerInfo = await followThisUser(userLog, userId)  
+    const followerInfo = await followThisUser(userLog, userId)
     return res.status(200).json({ user: user.toObject(), followerInfo })
-    
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
-  
 }
-
 
 // METHOD FOR RETURNING A LIST OF PAGINATED USERS (Check the pagination)
 async function getUsers(req: Request | any, res: Response) {
- 
   const identityId = req.user
   const page = req.params.page || 1
 
@@ -229,121 +217,124 @@ async function getUsers(req: Request | any, res: Response) {
     page: page,
     limit: 5
   }
-   
+
   try {
     const users = await User.paginate({}, options)
-    if(!users || !users.docs){
+    if (!users || !users.docs) {
       return res.send(404).json({ msg: 'No hay usuarios disponibles' })
     }
 
-    const userResponse = users.docs.map(({ passwor, role, image,token, confirmed, __v, ...user }) => user)
-    
+    const userResponse = users.docs.map(
+      ({ passwor, role, image, token, confirmed, __v, ...user }) => user
+    )
 
     const { following, followed } = await followUserIds(identityId)
-      return res.status(200).json({
-        users: userResponse,
-        user_following: following,
-        user_followed_me: followed,
-        total: users.totalDocs,
-        pages: users.totalPages
-      }) 
-  }    
-  catch (error: unknown) {
+    return res.status(200).json({
+      users: userResponse,
+      user_following: following,
+      user_followed_me: followed,
+      total: users.totalDocs,
+      pages: users.totalPages
+    })
+  } catch (error: unknown) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
 
-
 // METHOD TO COUNT THE USERS I FOLLOW, THOSE WHO FOLLOW ME AND PUBLICATIONS
 async function getCounters(req: Request | any, res: Request | any) {
-
   const userId = req.params.id || req.user._id
 
   try {
     const value = await getCountFollow(userId)
-    if(!value) {
-      return res.status(500).json({ msg: 'Algo salio mal'})
-    }else {
+    if (!value) {
+      return res.status(500).json({ msg: 'Algo salio mal' })
+    } else {
       return res.status(200).json({ value })
     }
-
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
-    
-  
 }
 
 // METHOD TO UPDATE A USER'S DATA
 async function updateUser(req: Request | any, res: Response) {
-  
-    const userId = req.params.id
-    const userIdentity = req.user._id
-    const update = { ...req.body }
+  const userId = req.params.id
+  const userIdentity = req.user._id
+  const update = { ...req.body }
 
   // Delete the password that comes in the user request
-    delete update.password
-    
-    if (userIdentity.toString() !== userId) {
-      return res.status(403).json({ msg: 'No tienes permiso para actualizar este usuario' })
-    }
+  delete update.password
 
-    try {
+  if (userIdentity.toString() !== userId) {
+    return res
+      .status(403)
+      .json({ msg: 'No tienes permiso para actualizar este usuario' })
+  }
 
-    const userUpdated = await User.findByIdAndUpdate(userId, update, { new: true })
+  try {
+    const userUpdated = await User.findByIdAndUpdate(userId, update, {
+      new: true
+    })
     if (!userUpdated) {
-      return res.status(404).json({ msg: 'No se ha podido actualizar el usuario' })
+      return res
+        .status(404)
+        .json({ msg: 'No se ha podido actualizar el usuario' })
     }
 
-    const { password, token, role, confirmed, image, __v, ...newUser } = userUpdated.toObject()
-    
-    return res.status(200).json({ user: newUser })
+    const { password, token, role, confirmed, image, __v, ...newUser } =
+      userUpdated.toObject()
 
+    return res.status(200).json({ user: newUser })
   } catch (error) {
     logError(error)
-    return res.status(500).json({ msg: 'Error interno del API'})
+    return res.status(500).json({ msg: 'Error interno del API' })
   }
 }
-
-
 
 // Internal Controller Functions
 async function followThisUser(identityUserId: string, userId: string) {
   try {
     const following = await Follow.findOne({
       user: identityUserId,
-      followed: userId,
+      followed: userId
     })
 
     const followed = await Follow.findOne({
       user: userId,
-      followed: identityUserId,
+      followed: identityUserId
     })
 
     return { following, followed }
   } catch (error) {
     logError(error)
-    return { following: null, followed: null}
+    return { following: null, followed: null }
   }
 }
 
 async function followUserIds(userId: string) {
   try {
-    const following = await Follow.find({ user: userId }).select({ _id: 0, __v: 0, user: 0 }).exec()
-    
-    const followed = await Follow.find({ followed: userId }).select({ _id: 0, __v: 0, followed: 0 }).exec()
-      
+    const following = await Follow.find({ user: userId })
+      .select({ _id: 0, __v: 0, user: 0 })
+      .exec()
+
+    const followed = await Follow.find({ followed: userId })
+      .select({ _id: 0, __v: 0, followed: 0 })
+      .exec()
+
     // Procesar following ids
-    const following_clean: any[] = following.map((follow: any) => follow.followed)
-  
+    const following_clean: any[] = following.map(
+      (follow: any) => follow.followed
+    )
+
     // Procesar followed ids
     const followed_clean: any[] = followed.map((follow: any) => follow.user)
-  
+
     return {
       following: following_clean,
-      followed: followed_clean,
+      followed: followed_clean
     }
   } catch (error) {
     logError(error)
@@ -355,7 +346,7 @@ const getCountFollow = async (userId: any) => {
   try {
     const following = await Follow.countDocuments({ user: userId })
     const followed = await Follow.countDocuments({ followed: userId })
-    const publication = await Publication.countDocuments({ user: userId})
+    const publication = await Publication.countDocuments({ user: userId })
 
     return { following, followed, publication }
   } catch (error) {
@@ -363,8 +354,6 @@ const getCountFollow = async (userId: any) => {
     return { following: null, followed: null, publication: null }
   }
 }
-
-
 
 export default {
   saveUser,
@@ -377,5 +366,5 @@ export default {
   getUser,
   getUsers,
   getCounters,
-  updateUser,
+  updateUser
 }
