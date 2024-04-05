@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/indent */
 /* eslint-disable @typescript-eslint/semi */
 
+import app from '../index'
 import { describe, test, expect } from '@jest/globals'
 import request from 'supertest'
-import app from '../index'
 
 describe('Get /user/:id', () => {
   test('Should response status code 200 if the resource exist and return an object', async () => {

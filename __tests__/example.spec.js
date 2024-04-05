@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 'use strict'
 /* eslint-disable @typescript-eslint/indent */
 /* eslint-disable @typescript-eslint/semi */
