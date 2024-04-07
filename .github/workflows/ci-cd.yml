@@ -1,4 +1,4 @@
-name: CI/CD for API
+name: CI Pure
 
 on:
   push:
