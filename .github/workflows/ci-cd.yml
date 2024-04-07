@@ -8,15 +8,7 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  avoid_redundant:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action
-        with:
-          access_token: ${{ github.token }}
-
-  linter:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: checkout the code
@@ -49,7 +41,7 @@ jobs:
         run: npm run build
 
   unit-test:
-    needs: [linter, build]
+    needs: [lint, build]
     runs-on: ubuntu-latest
     steps:
       - name: checkout the code
