@@ -44,11 +44,10 @@ jobs:
         with:
           node-version: 18
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund --no-optional
       - name: Build
         run: npm run build
-      - name: Use an artifact
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
@@ -67,8 +66,7 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm install --no-audit --no-fund --no-optional
-      - name: Use an artifact
-        uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
