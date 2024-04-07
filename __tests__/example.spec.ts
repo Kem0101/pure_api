@@ -3,7 +3,22 @@
 
 import app from '../index'
 import { describe, test, expect } from '@jest/globals'
+import { Server } from 'http'
 import request from 'supertest'
+
+let server: Server
+
+beforeAll((done) => {
+  const PORT = process.env.PORT || 4000
+  server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}!`)
+    done()
+  })
+})
+
+afterAll(() => {
+  server.close()
+})
 
 describe('Get /user/:id', () => {
   test('Should response status code 200 if the resource exist and return an object', async () => {

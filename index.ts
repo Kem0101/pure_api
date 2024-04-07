@@ -37,9 +37,11 @@ app.use('/api', followRoutes)
 app.use(express.static('public'))
 
 // Server listening on port x
-const PORT = process.env.PORT
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}!`)
-})
+if (require.main === module) {
+  const PORT = process.env.PORT
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}!`)
+  })
+}
 
 export default app
